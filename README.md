@@ -63,7 +63,6 @@ Or add it to your VS Code `settings.json` (less secure, visible in plain text):
    — or open the command palette and run **C2ST: Convert C to ST**
 4. The Structured Text result opens in a panel to the right
 
-![Usage demo placeholder](docs/demo.gif)
 
 ## Settings
 
