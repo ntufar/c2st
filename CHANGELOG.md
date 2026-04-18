@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-04-18
+
+### Added
+- Comprehensive logging/diagnostics system with VS Code output channel
+  - `[INFO]`, `[DEBUG]`, `[WARN]`, `[ERROR]` log levels throughout extension
+  - New "C2ST: Show Logs" command to view diagnostics
+  - Logging for extension lifecycle, API key management, conversion process, API calls, and file operations
+  - Performance tracking with conversion duration in milliseconds
+  - Token usage logging (prompt, completion, total tokens) for cost analysis
+- API response validation with TypeScript type guards
+  - `MistralResponse` interface defining expected API schema
+  - `validateMistralResponse()` function for pre-processing validation
+  - Early detection of API format changes with detailed error logging
+  - Type-safe response handling throughout codebase
+  - Logs first 500 chars of invalid responses for debugging
+
+### Changed
+- `outputChannel` made optional (`OutputChannel | undefined`) to support testing
+- All logging now uses `log()` helper function for safe operation
+- API response handling enhanced with schema validation before field access
+- Better error messages distinguishing API format errors from empty content
+- Extension now logs detailed diagnostics for troubleshooting user issues
+
+### Fixed
+- All 18 tests now passing (previously failing due to undefined outputChannel)
+- Test suite compatible with direct function calls without extension activation
+
 ## [0.0.8] - 2026-04-18
 
 ### Security
