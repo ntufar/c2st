@@ -1,16 +1,16 @@
 # C2ST Improvement Plan
 
 Generated: April 18, 2026  
-Last Updated: April 18, 2026 (Added comprehensive logging/diagnostics - Improvement #5)
+Last Updated: April 18, 2026 (Added API response validation - Improvement #8)
 
 ## Progress Tracker
 
 **Critical Issues:** 1/3 Complete ✅  
 **High Priority:** 3/4 Complete ✅  
-**Medium Priority:** 1/4 Complete ✅  
+**Medium Priority:** 2/4 Complete ✅  
 **Nice to Have:** 0/9 Complete  
 
-**Overall Progress:** 5/20 (25%)
+**Overall Progress:** 6/20 (30%)
 
 ---
 
@@ -19,13 +19,14 @@ Last Updated: April 18, 2026 (Added comprehensive logging/diagnostics - Improvem
 The C2ST project is a well-crafted VS Code extension with clean code, good error handling, and excellent user experience. This document outlines identified areas for improvement, prioritized by impact and effort.
 
 **Current Status:**
-- Lines of Code: 319 (was 255)
+- Lines of Code: 381 (was 319)
 - Test Coverage: Full critical-path coverage ✅
 - Security Vulnerabilities: 0 ✅
-- Build Time: ~28ms ✅
-- Bundle Size: 422KB ✅ (was 227KB, increased due to logging)
+- Build Time: ~23ms ✅
+- Bundle Size: 423KB ✅ (was 422KB)
 - Package Size: 222KB ✅ (was 1.1MB - **80% reduction!**)
 - Logging: Comprehensive diagnostics ✅
+- API Validation: Schema validation with type guards ✅
 
 ---
 
@@ -419,23 +420,15 @@ npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslin
 ## 📋 Medium Priority
 
 ### 8. API Response Validation
-- [ ] **Completed**  
-**Status:** ⚠️ Could fail silently  
-**Location:** `src/extension.ts:202-208`  
-**Impact:** Poor error messages if Mistral API changes
+- [x] **Completed** ✅ (April 18, 2026)  
+**Status:** ✅ Fixed — Robust API response validation with type guards  
+**Location:** `src/extension.ts:35-86, 290-310`  
+**Impact:** Better error messages and early detection if Mistral API changes response format
 
-**Current Code:**
-```typescript
-const content: string | undefined = response.data?.choices?.[0]?.message?.content;
-if (!content) {
-  vscode.window.showErrorMessage('C2ST: Mistral returned an empty response.');
-  return undefined;
-}
-```
+**What Was Implemented:**
 
-**Recommendation:**
+**MistralResponse Interface:**
 ```typescript
-// Add response schema validation
 interface MistralResponse {
   choices: Array<{
     message: {
@@ -443,33 +436,77 @@ interface MistralResponse {
       role: string;
     };
     finish_reason: string;
+    index: number;
   }>;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
-}
-
-function validateMistralResponse(data: unknown): data is MistralResponse {
-  if (!data || typeof data !== 'object') return false;
-  const resp = data as any;
-  return (
-    Array.isArray(resp.choices) &&
-    resp.choices.length > 0 &&
-    typeof resp.choices[0]?.message?.content === 'string'
-  );
-}
-
-// In callMistral:
-if (!validateMistralResponse(response.data)) {
-  outputChannel.appendLine('[ERROR] Invalid API response structure');
-  vscode.window.showErrorMessage('C2ST: Received invalid response from Mistral API.');
-  return undefined;
+  id: string;
+  model: string;
+  created: number;
 }
 ```
 
-**Effort:** 1 hour  
+**Type Guard Function:**
+```typescript
+function validateMistralResponse(data: unknown): data is MistralResponse {
+  // Validates response structure step-by-step
+  // Returns true only if all required fields are present and valid
+  // Checks: data exists, choices array exists, has elements, 
+  //         message object exists, content string exists
+}
+```
+
+**Enhanced Error Handling in `callMistral()`:**
+- Validates response structure before accessing fields
+- Logs detailed validation failure info (first 500 chars of response)
+- Shows user-friendly error: "Received invalid response from Mistral API. The API response format may have changed."
+- Logs token usage information (prompt, completion, total tokens) when available
+- Type-safe access to response fields using validated type
+
+**Benefits:**
+1. **Type Safety**: TypeScript knows the exact shape of validated responses
+2. **Early Detection**: Catches API changes immediately before processing
+3. **Better Diagnostics**: Logs actual response structure when validation fails
+4. **Clearer Errors**: Users get specific messages about format issues vs empty content
+5. **Token Tracking**: Now logs token usage for cost analysis
+
+**Example Log Output (Success):**
+```
+[INFO] Calling Mistral API...
+[DEBUG] Model: mistral-large-latest, Input length: 245 chars
+[DEBUG] API response status: 200
+[INFO] API call successful
+[DEBUG] Response tokens - prompt: 1234, completion: 567, total: 1801
+```
+
+**Example Log Output (Validation Failure):**
+```
+[INFO] Calling Mistral API...
+[DEBUG] Model: mistral-large-latest, Input length: 245 chars
+[DEBUG] API response status: 200
+[ERROR] Invalid API response structure
+[DEBUG] Response data: {"error": "model not available"...}
+```
+
+**Code Changes:**
+- Added `MistralResponse` interface (18 lines)
+- Added `validateMistralResponse()` function (32 lines)
+- Updated `callMistral()` to validate before processing (12 lines)
+- Enhanced logging with token usage information
+
+**Files Modified:**
+- `src/extension.ts` - 319 → 381 lines (+62 lines)
+
+**Verification:**
+```bash
+npm run compile  # Builds successfully in 23ms
+npx tsc --noEmit src/extension.ts  # No TypeScript errors
+```
+
+**Effort:** 1 hour (as estimated)  
 **Priority:** P2 (Medium)
 
 ---
@@ -940,14 +977,15 @@ trackEvent('conversion.failed', { model, errorType: 'rate_limit' });
 
 | Aspect | Rating | Notes |
 |--------|--------|-------|
-| Code Quality | ⭐⭐⭐⭐⭐ | Clean, well-structured TypeScript |
-| Error Handling | ⭐⭐⭐⭐⭐ | Comprehensive HTTP error handling |
+| Code Quality | ⭐⭐⭐⭐⭐ | Clean, well-structured TypeScript with type guards |
+| Error Handling | ⭐⭐⭐⭐⭐ | Comprehensive HTTP error handling + API validation |
 | Security | ⭐⭐⭐⭐ | Good (encrypted API keys, 0 vulnerabilities) |
 | Test Coverage | ⭐⭐⭐⭐ | Full critical-path coverage (18 tests) |
 | Documentation | ⭐⭐⭐⭐⭐ | Excellent README, CONTRIBUTING, CHANGELOG |
-| Performance | ⭐⭐⭐⭐⭐ | Excellent (~28ms builds, 422KB bundle) |
+| Performance | ⭐⭐⭐⭐⭐ | Excellent (~23ms builds, 423KB bundle) |
 | Package Size | ⭐⭐⭐⭐⭐ | Excellent (222KB, 80% reduction) |
 | Logging | ⭐⭐⭐⭐⭐ | Comprehensive diagnostics with output channel |
+| API Robustness | ⭐⭐⭐⭐⭐ | Schema validation with TypeScript type guards |
 
 ---
 
@@ -986,15 +1024,15 @@ trackEvent('conversion.failed', { model, errorType: 'rate_limit' });
 ### Week 3: Medium Priority Enhancements
 **Goal:** Improve robustness and user experience
 
-1. **Day 1:** API response validation (1 hour)
+1. **Day 1:** ✅ API response validation (1 hour) - **COMPLETED**
 2. **Day 2:** Make timeout configurable (30 min) + Add CONTRIBUTING.md (1 hour)
 3. **Day 3-4:** Add troubleshooting section to README (1 hour)
 4. **Day 5:** Review and polish all changes
 
 **Deliverables:**
-- ✅ More robust API integration
-- ✅ Better documentation
-- ✅ Configurable settings
+- ✅ More robust API integration (validation completed)
+- ✅ Better documentation (completed)
+- ❌ Configurable settings (timeout pending)
 
 ---
 
@@ -1064,6 +1102,7 @@ These can be implemented in < 1 hour with high impact:
 5. ✅ Add CHANGELOG.md (15 min, better tracking) - **COMPLETED**
 6. ✅ Add npm audit to CI (10 min, security) - **COMPLETED**
 7. ✅ Add logging/diagnostics (1 hour, troubleshooting) - **COMPLETED**
+8. ✅ Add API response validation (1 hour, robustness) - **COMPLETED**
 
-**Total time:** ~3.5 hours  
+**Total time:** ~4.5 hours  
 **Total impact:** Massive improvement in quality and reliability

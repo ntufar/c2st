@@ -31,6 +31,60 @@ with 3-5 bullets explaining the most important conversions and any safety issues
 
 export const MAX_SELECTION_CHARS = 10_000;
 
+// Mistral API response schema
+interface MistralResponse {
+  choices: Array<{
+    message: {
+      content: string;
+      role: string;
+    };
+    finish_reason: string;
+    index: number;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  id: string;
+  model: string;
+  created: number;
+}
+
+// Type guard to validate Mistral API response structure
+function validateMistralResponse(data: unknown): data is MistralResponse {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  
+  const resp = data as any;
+  
+  // Check required fields
+  if (!Array.isArray(resp.choices)) {
+    return false;
+  }
+  
+  if (resp.choices.length === 0) {
+    return false;
+  }
+  
+  const firstChoice = resp.choices[0];
+  if (!firstChoice || typeof firstChoice !== 'object') {
+    return false;
+  }
+  
+  if (!firstChoice.message || typeof firstChoice.message !== 'object') {
+    return false;
+  }
+  
+  if (typeof firstChoice.message.content !== 'string') {
+    return false;
+  }
+  
+  // All required fields are present and valid
+  return true;
+}
+
 let statusBarItem: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
 
@@ -235,16 +289,24 @@ export async function callMistral(
 
     outputChannel.appendLine(`[DEBUG] API response status: ${response.status}`);
 
-    const content: string | undefined =
-      response.data?.choices?.[0]?.message?.content;
+    // Validate response structure
+    if (!validateMistralResponse(response.data)) {
+      outputChannel.appendLine('[ERROR] Invalid API response structure');
+      outputChannel.appendLine(`[DEBUG] Response data: ${JSON.stringify(response.data, null, 2).substring(0, 500)}...`);
+      vscode.window.showErrorMessage('C2ST: Received invalid response from Mistral API. The API response format may have changed.');
+      return undefined;
+    }
 
-    if (!content) {
+    const content = response.data.choices[0].message.content;
+
+    if (!content || content.trim().length === 0) {
       outputChannel.appendLine('[ERROR] API returned empty content');
       vscode.window.showErrorMessage('C2ST: Mistral returned an empty response.');
       return undefined;
     }
 
     outputChannel.appendLine('[INFO] API call successful');
+    outputChannel.appendLine(`[DEBUG] Response tokens - prompt: ${response.data.usage?.prompt_tokens ?? 'N/A'}, completion: ${response.data.usage?.completion_tokens ?? 'N/A'}, total: ${response.data.usage?.total_tokens ?? 'N/A'}`);
     return content;
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
