@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-04-18
+
+### Security
+- Override `serialize-javascript` to `^7.0.5` to resolve two high-severity CVEs in the transitive dependency pulled in by Mocha:
+  - `GHSA-5c6j-r48x-rmvq` — RCE via `RegExp.flags` / `Date.prototype.toISOString()`
+  - `GHSA-qj8w-gfj5-8c6v` — CPU exhaustion DoS via crafted array-like objects
+
 ## [0.0.7] - 2026-04-18
 
 ### Added
@@ -106,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow for tagged versions
 - Artifact storage (14-day retention)
 
-[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/ntufar/c2st/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/ntufar/c2st/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/ntufar/c2st/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/ntufar/c2st/releases/tag/v0.0.5

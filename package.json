@@ -3,7 +3,7 @@
   "name": "c2st",
   "displayName": "C2ST - C to Structured Text",
   "description": "AI-powered C to IEC 61131-3 Structured Text converter using Mistral",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "engines": {
     "vscode": "^1.85.0"
   },
