@@ -1,0 +1,87 @@
+{
+  "name": "c2st",
+  "displayName": "C2ST - C to Structured Text",
+  "description": "AI-powered C to IEC 61131-3 Structured Text converter using Mistral",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "C",
+    "IEC 61131-3",
+    "Structured Text",
+    "PLC",
+    "Mistral",
+    "AI"
+  ],
+  "activationEvents": [
+    "onCommand:c2st.convertSelection",
+    "onCommand:c2st.setApiKey",
+    "onLanguage:c"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "c2st.convertSelection",
+        "title": "C2ST: Convert C to ST"
+      },
+      {
+        "command": "c2st.setApiKey",
+        "title": "C2ST: Set Mistral API Key"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "c2st.convertSelection",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "C2ST",
+      "properties": {
+        "c2st.mistralApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Mistral API key. Get one at https://console.mistral.ai/",
+          "scope": "application"
+        },
+        "c2st.model": {
+          "type": "string",
+          "default": "mistral-large-latest",
+          "enum": [
+            "mistral-large-latest",
+            "open-mistral-7b"
+          ],
+          "enumDescriptions": [
+            "Mistral Large - best quality, higher cost",
+            "Mistral 7B - faster, lower cost"
+          ],
+          "description": "Mistral model to use for conversion",
+          "scope": "application"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "vscode:prepublish": "npm run compile -- --minify",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
