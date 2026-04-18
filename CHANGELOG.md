@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-04-18
+
+### Added
+- Full test suite with 18 passing tests covering all critical paths (`src/test/`)
+  - `getApiKey`: settings lookup, secret storage fallback, undefined, whitespace trimming
+  - `callMistral`: success, 401, 429, timeout, network error, empty/missing response, unexpected errors
+  - `runConversion`: no editor, empty selection, whitespace-only, oversized selection, missing API key prompt
+- Testing framework: `@vscode/test-electron`, Mocha, Sinon with type definitions
+- `compile-tests` and `test` npm scripts for running the suite
+- `lint` npm script (`tsc --noEmit`) for type-checking enforcement
+
+### Changed
+- `getApiKey`, `promptForApiKey`, `callMistral`, `runConversion`, and `MAX_SELECTION_CHARS` are now exported from `extension.ts` to enable unit testing
+- CI pipeline (`ci.yml`) expanded with Lint, Security Audit, and Test steps; tests run under `xvfb-run` for headless VS Code support
+- Release pipeline (`release.yml`) now runs the full quality gate (lint + audit + tests) before packaging, and automatically publishes to the VS Code Marketplace on version tags via `VSCE_PAT` secret
+
 ## [0.0.6] - 2026-04-18
 
 ### Added
@@ -90,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow for tagged versions
 - Artifact storage (14-day retention)
 
-[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/ntufar/c2st/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/ntufar/c2st/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/ntufar/c2st/releases/tag/v0.0.5
 [0.0.3]: https://github.com/ntufar/c2st/releases/tag/v0.0.3

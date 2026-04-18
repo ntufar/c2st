@@ -3,7 +3,7 @@
   "name": "c2st",
   "displayName": "C2ST - C to Structured Text",
   "description": "AI-powered C to IEC 61131-3 Structured Text converter using Mistral",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -81,14 +81,23 @@
   },
   "scripts": {
     "compile": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "compile-tests": "tsc -p tsconfig.json --outDir out",
     "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "lint": "tsc --noEmit",
     "vscode:prepublish": "npm run compile -- --minify",
-    "package": "vsce package"
+    "package": "vsce package",
+    "pretest": "npm run compile-tests",
+    "test": "node ./out/test/runTests.js"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
+    "@types/sinon": "^21.0.1",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.28.0",
+    "mocha": "^11.7.5",
+    "sinon": "^21.1.2",
     "typescript": "^5.3.0"
   },
   "dependencies": {

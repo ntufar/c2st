@@ -29,7 +29,7 @@ Conversion rules:
 *)
 with 3-5 bullets explaining the most important conversions and any safety issues.`;
 
-const MAX_SELECTION_CHARS = 10_000;
+export const MAX_SELECTION_CHARS = 10_000;
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -69,7 +69,7 @@ function updateStatusBar(editor: vscode.TextEditor | undefined) {
   }
 }
 
-async function getApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
+export async function getApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
   // Check VS Code settings first (user may have set it there)
   const config = vscode.workspace.getConfiguration('c2st');
   let key = config.get<string>('mistralApiKey');
@@ -87,7 +87,7 @@ async function getApiKey(context: vscode.ExtensionContext): Promise<string | und
   return undefined;
 }
 
-async function promptForApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
+export async function promptForApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
   const key = await vscode.window.showInputBox({
     prompt: 'Enter your Mistral API key',
     placeHolder: 'sk-...',
@@ -106,7 +106,7 @@ async function promptForApiKey(context: vscode.ExtensionContext): Promise<string
   return key.trim();
 }
 
-async function runConversion(context: vscode.ExtensionContext) {
+export async function runConversion(context: vscode.ExtensionContext) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     vscode.window.showErrorMessage('C2ST: No active editor.');
@@ -163,7 +163,7 @@ async function runConversion(context: vscode.ExtensionContext) {
   );
 }
 
-async function callMistral(
+export async function callMistral(
   apiKey: string,
   model: string,
   cCode: string

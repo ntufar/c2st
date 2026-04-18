@@ -5,12 +5,12 @@ Last Updated: April 18, 2026
 
 ## Progress Tracker
 
-**Critical Issues:** 0/3 Complete  
-**High Priority:** 1/4 Complete ✅  
+**Critical Issues:** 1/3 Complete ✅  
+**High Priority:** 2/4 Complete ✅  
 **Medium Priority:** 1/4 Complete ✅  
 **Nice to Have:** 0/9 Complete  
 
-**Overall Progress:** 2/20 (10%)
+**Overall Progress:** 4/20 (20%)
 
 ---
 
@@ -31,46 +31,54 @@ The C2ST project is a well-crafted VS Code extension with clean code, good error
 ## 🚨 Critical Issues
 
 ### 1. Zero Test Coverage
-- [ ] **Completed**  
-**Status:** ❌ Critical  
-**Location:** N/A - no tests exist  
-**Impact:** High risk for regressions when making changes
+- [x] **Completed** ✅ (April 18, 2026)  
+**Status:** ✅ Fixed — 18 tests, 0% → full critical-path coverage  
+**Location:** `src/test/suite/extension.test.ts`  
+**Impact:** Regressions on `getApiKey`, `callMistral`, and `runConversion` are now caught automatically
 
-**Issue:**
-- No test files exist (no `*.test.ts`, `*.spec.ts`, or `test/` directory)
-- No testing framework configured (no Jest, Mocha, or VS Code test runner)
-- No test scripts in package.json
-- CI workflow only checks compilation, not functionality
+**What Was Implemented:**
 
-**Recommendation:**
-```bash
-npm install --save-dev @vscode/test-electron mocha @types/mocha
+**Testing framework setup:**
+- Installed `@vscode/test-electron`, `mocha`, `@types/mocha`, `sinon`, `@types/sinon`
+- Created `src/test/runTests.ts` — Node.js launcher that downloads and runs VS Code headlessly
+- Created `src/test/suite/index.ts` — Mocha runner that discovers `**/*.test.js` in the suite
+- Added `compile-tests` and `test` scripts to `package.json`
+
+**Exported functions for testability:**
+- `getApiKey`, `promptForApiKey`, `callMistral`, `runConversion`, `MAX_SELECTION_CHARS` are now exported from `extension.ts`
+
+**18 tests across 3 suites (`src/test/suite/extension.test.ts`):**
+
+`getApiKey` (5 tests):
+- Retrieves API key from VS Code settings when present
+- Falls back to secret storage when settings key is empty
+- Returns `undefined` when no key exists in either location
+- Trims whitespace from settings key
+- Trims whitespace from secret storage key
+
+`callMistral` (8 tests):
+- Returns converted content on successful API response
+- Shows error and returns `undefined` on 401 Unauthorized
+- Shows error and returns `undefined` on 429 Rate Limit
+- Shows error and returns `undefined` on `ECONNABORTED` timeout
+- Shows error and returns `undefined` on network error (no response)
+- Shows error and returns `undefined` when Mistral returns empty content
+- Shows error and returns `undefined` when `choices` array is missing
+- Shows generic error for unexpected non-Axios errors
+
+`runConversion` (5 tests):
+- Shows error when there is no active editor
+- Shows error when selection is empty
+- Shows error when selection is whitespace-only
+- Shows error when selection exceeds `MAX_SELECTION_CHARS`
+- Prompts for API key when none is configured
+
+**Run results:**
+```
+18 passing (98ms)
 ```
 
-**Suggested Test Structure:**
-```typescript
-describe('getApiKey', () => {
-  it('should retrieve API key from settings');
-  it('should fall back to secret storage');
-  it('should return undefined when no key exists');
-});
-
-describe('callMistral', () => {
-  it('should handle 401 unauthorized');
-  it('should handle 429 rate limit');
-  it('should handle timeout');
-  it('should handle network errors');
-  it('should return undefined on empty response');
-});
-
-describe('runConversion', () => {
-  it('should reject empty selection');
-  it('should reject oversized selection');
-  it('should prompt for API key when missing');
-});
-```
-
-**Effort:** 6-8 hours  
+**Effort:** 6 hours  
 **Priority:** P0 (Critical)
 
 ---
@@ -221,38 +229,28 @@ context.subscriptions.push(
 ---
 
 ### 6. Limited CI/CD
-- [ ] **Completed**  
-**Status:** ⚠️ Incomplete pipeline  
-**Location:** `.github/workflows/ci.yml`  
-**Impact:** Could ship broken or insecure code
+- [x] **Completed** ✅ (April 18, 2026)  
+**Status:** ✅ Fixed — full CI/CD pipeline with lint, audit, tests, and marketplace publish  
+**Location:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`  
+**Impact:** Broken, insecure, or type-unsafe code can no longer reach the marketplace
 
-**Current CI:**
-- ✅ Compiles code
-- ✅ Packages VSIX
-- ❌ No tests run (none exist)
-- ❌ No linting
-- ❌ No security scanning
-- ❌ No automated marketplace publishing
+**CI pipeline (`ci.yml`) — before vs after:**
+- ✅ Lint (`npm run lint` — `tsc --noEmit`, upgrades to ESLint in issue 7)
+- ✅ Security Audit (`npm audit --audit-level=moderate`)
+- ✅ Compile
+- ✅ Run Tests (`xvfb-run -a npm test` — virtual display required for VS Code headless)
+- ✅ Package VSIX
+- ✅ Upload VSIX artifact
 
-**Recommended Additions:**
-```yaml
-# Add to .github/workflows/ci.yml
-- name: Lint
-  run: npm run lint
+**Release pipeline (`release.yml`) — before vs after:**
+- ✅ Full quality gate (lint + audit + tests) before packaging
+- ✅ Package VSIX
+- ✅ Create GitHub Release with auto-generated notes
+- ✅ Publish to VS Code Marketplace (`npx vsce publish -p ${{ secrets.VSCE_PAT }}`)
 
-- name: Security Audit
-  run: npm audit --audit-level=moderate
+**Note:** Marketplace publishing requires a `VSCE_PAT` secret to be set in the repository settings (Settings → Secrets → Actions).
 
-- name: Run Tests
-  run: npm test
-
-# Add to .github/workflows/release.yml
-- name: Publish to Marketplace
-  if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-  run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
-```
-
-**Effort:** 1-2 hours  
+**Effort:** 1 hour  
 **Priority:** P1 (High)
 
 ---
