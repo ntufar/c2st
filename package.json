@@ -28,6 +28,7 @@
   "activationEvents": [
     "onCommand:c2st.convertSelection",
     "onCommand:c2st.setApiKey",
+    "onCommand:c2st.showLogs",
     "onLanguage:c"
   ],
   "extensionPack": [
@@ -43,6 +44,10 @@
       {
         "command": "c2st.setApiKey",
         "title": "C2ST: Set Mistral API Key"
+      },
+      {
+        "command": "c2st.showLogs",
+        "title": "C2ST: Show Logs"
       }
     ],
     "keybindings": [

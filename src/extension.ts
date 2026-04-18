@@ -32,8 +32,16 @@ with 3-5 bullets explaining the most important conversions and any safety issues
 export const MAX_SELECTION_CHARS = 10_000;
 
 let statusBarItem: vscode.StatusBarItem;
+let outputChannel: vscode.OutputChannel;
 
 export function activate(context: vscode.ExtensionContext) {
+  // Create output channel for logging
+  outputChannel = vscode.window.createOutputChannel('C2ST');
+  context.subscriptions.push(outputChannel);
+  
+  outputChannel.appendLine('[INFO] C2ST extension activated');
+  outputChannel.appendLine(`[INFO] Version: ${context.extension.packageJSON.version}`);
+
   // Status bar item shown when a C file is open
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.text = '$(symbol-misc) C2ST';
@@ -59,6 +67,13 @@ export function activate(context: vscode.ExtensionContext) {
       promptForApiKey(context)
     )
   );
+
+  // Command to open output channel logs
+  context.subscriptions.push(
+    vscode.commands.registerCommand('c2st.showLogs', () => {
+      outputChannel.show();
+    })
+  );
 }
 
 function updateStatusBar(editor: vscode.TextEditor | undefined) {
@@ -70,24 +85,31 @@ function updateStatusBar(editor: vscode.TextEditor | undefined) {
 }
 
 export async function getApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
+  outputChannel.appendLine('[DEBUG] Retrieving API key...');
+  
   // Check VS Code settings first (user may have set it there)
   const config = vscode.workspace.getConfiguration('c2st');
   let key = config.get<string>('mistralApiKey');
 
   if (key && key.trim().length > 0) {
+    outputChannel.appendLine('[DEBUG] API key found in VS Code settings');
     return key.trim();
   }
 
   // Fall back to secret storage (set via the Set Key command)
   key = await context.secrets.get('c2st.mistralApiKey');
   if (key && key.trim().length > 0) {
+    outputChannel.appendLine('[DEBUG] API key found in secret storage');
     return key.trim();
   }
 
+  outputChannel.appendLine('[WARN] No API key configured');
   return undefined;
 }
 
 export async function promptForApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {
+  outputChannel.appendLine('[INFO] Prompting user for API key...');
+  
   const key = await vscode.window.showInputBox({
     prompt: 'Enter your Mistral API key',
     placeHolder: 'sk-...',
@@ -97,18 +119,23 @@ export async function promptForApiKey(context: vscode.ExtensionContext): Promise
   });
 
   if (!key) {
+    outputChannel.appendLine('[INFO] User cancelled API key input');
     return undefined;
   }
 
   // Store in VS Code secret storage (never written to disk in plain text)
   await context.secrets.store('c2st.mistralApiKey', key.trim());
+  outputChannel.appendLine('[INFO] API key saved to secure storage');
   vscode.window.showInformationMessage('C2ST: Mistral API key saved.');
   return key.trim();
 }
 
 export async function runConversion(context: vscode.ExtensionContext) {
+  outputChannel.appendLine('[INFO] Starting conversion...');
+  
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
+    outputChannel.appendLine('[ERROR] No active editor');
     vscode.window.showErrorMessage('C2ST: No active editor.');
     return;
   }
@@ -117,11 +144,15 @@ export async function runConversion(context: vscode.ExtensionContext) {
   const selectedText = editor.document.getText(selection);
 
   if (!selectedText || selectedText.trim().length === 0) {
+    outputChannel.appendLine('[ERROR] No text selected');
     vscode.window.showErrorMessage('C2ST: Select some C code first.');
     return;
   }
 
+  outputChannel.appendLine(`[DEBUG] Selection length: ${selectedText.length} characters`);
+
   if (selectedText.length > MAX_SELECTION_CHARS) {
+    outputChannel.appendLine(`[ERROR] Selection exceeds maximum size (${selectedText.length} > ${MAX_SELECTION_CHARS})`);
     vscode.window.showErrorMessage(
       `C2ST: Selection is too large (${selectedText.length} chars). Maximum is ${MAX_SELECTION_CHARS} to avoid excessive API costs.`
     );
@@ -131,12 +162,14 @@ export async function runConversion(context: vscode.ExtensionContext) {
   // Resolve API key — prompt if missing
   let apiKey = await getApiKey(context);
   if (!apiKey) {
+    outputChannel.appendLine('[WARN] API key not configured, prompting user...');
     const action = await vscode.window.showWarningMessage(
       'C2ST: No Mistral API key configured. Get one at https://console.mistral.ai/',
       'Enter API Key',
       'Cancel'
     );
     if (action !== 'Enter API Key') {
+      outputChannel.appendLine('[INFO] User cancelled API key setup');
       return;
     }
     apiKey = await promptForApiKey(context);
@@ -147,6 +180,8 @@ export async function runConversion(context: vscode.ExtensionContext) {
 
   const model =
     vscode.workspace.getConfiguration('c2st').get<string>('model') ?? 'mistral-large-latest';
+  
+  outputChannel.appendLine(`[INFO] Using model: ${model}`);
 
   await vscode.window.withProgress(
     {
@@ -155,9 +190,16 @@ export async function runConversion(context: vscode.ExtensionContext) {
       cancellable: false,
     },
     async () => {
+      const startTime = Date.now();
       const result = await callMistral(apiKey!, model, selectedText);
+      const duration = Date.now() - startTime;
+      
       if (result) {
+        outputChannel.appendLine(`[INFO] Conversion completed successfully in ${duration}ms`);
+        outputChannel.appendLine(`[DEBUG] Result length: ${result.length} characters`);
         await openResultDocument(result);
+      } else {
+        outputChannel.appendLine(`[ERROR] Conversion failed after ${duration}ms`);
       }
     }
   );
@@ -168,6 +210,9 @@ export async function callMistral(
   model: string,
   cCode: string
 ): Promise<string | undefined> {
+  outputChannel.appendLine('[INFO] Calling Mistral API...');
+  outputChannel.appendLine(`[DEBUG] Model: ${model}, Input length: ${cCode.length} chars`);
+  
   try {
     const response = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -188,40 +233,52 @@ export async function callMistral(
       }
     );
 
+    outputChannel.appendLine(`[DEBUG] API response status: ${response.status}`);
+
     const content: string | undefined =
       response.data?.choices?.[0]?.message?.content;
 
     if (!content) {
+      outputChannel.appendLine('[ERROR] API returned empty content');
       vscode.window.showErrorMessage('C2ST: Mistral returned an empty response.');
       return undefined;
     }
 
+    outputChannel.appendLine('[INFO] API call successful');
     return content;
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
+      outputChannel.appendLine(`[ERROR] API call failed: ${err.message}`);
+      
       if (status === 401) {
+        outputChannel.appendLine('[ERROR] Authentication failed (401)');
         vscode.window.showErrorMessage(
           'C2ST: Invalid Mistral API key (401). Run "C2ST: Set Mistral API Key" to update it.'
         );
       } else if (status === 429) {
+        outputChannel.appendLine('[ERROR] Rate limit exceeded (429)');
         vscode.window.showErrorMessage(
           'C2ST: Mistral rate limit hit (429). Wait a moment and try again.'
         );
       } else if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+        outputChannel.appendLine(`[ERROR] Request timeout (${err.code})`);
         vscode.window.showErrorMessage(
           'C2ST: Request timed out. Check your network and try again.'
         );
       } else if (!err.response) {
+        outputChannel.appendLine('[ERROR] Network error - no response from server');
         vscode.window.showErrorMessage(
           'C2ST: Network error — could not reach Mistral API. Check your internet connection.'
         );
       } else {
+        outputChannel.appendLine(`[ERROR] API error ${status}: ${err.response?.data?.message ?? err.message}`);
         vscode.window.showErrorMessage(
           `C2ST: Mistral API error ${status ?? 'unknown'}: ${err.response?.data?.message ?? err.message}`
         );
       }
     } else {
+      outputChannel.appendLine(`[ERROR] Unexpected error: ${String(err)}`);
       vscode.window.showErrorMessage(`C2ST: Unexpected error: ${String(err)}`);
     }
     return undefined;
@@ -241,15 +298,22 @@ async function openResultDocument(stCode: string) {
     outPath = path.join(os.tmpdir(), `c2st_output_${Date.now()}.st`);
   }
 
+  outputChannel.appendLine(`[INFO] Writing result to: ${outPath}`);
+
   fs.writeFileSync(outPath, stCode, 'utf8');
+  outputChannel.appendLine('[INFO] File written successfully');
 
   const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(outPath));
   await vscode.window.showTextDocument(doc, {
     viewColumn: vscode.ViewColumn.Beside,
     preserveFocus: false,
   });
+  
+  outputChannel.appendLine('[INFO] Result document opened');
 }
 
 export function deactivate() {
+  outputChannel?.appendLine('[INFO] C2ST extension deactivated');
   statusBarItem?.dispose();
+  outputChannel?.dispose();
 }
