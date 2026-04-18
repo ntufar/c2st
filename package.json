@@ -2,10 +2,11 @@
   "name": "c2st",
   "displayName": "C2ST - C to Structured Text",
   "description": "AI-powered C to IEC 61131-3 Structured Text converter using Mistral",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "images/icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,6 +28,9 @@
     "onCommand:c2st.convertSelection",
     "onCommand:c2st.setApiKey",
     "onLanguage:c"
+  ],
+  "extensionDependencies": [
+    "sergeyromanuk.structured-text"
   ],
   "main": "./out/extension.js",
   "contributes": {
