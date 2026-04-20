@@ -56,7 +56,7 @@ describe('getApiKey', () => {
     } as unknown as vscode.WorkspaceConfiguration);
 
     const ctx = makeFakeContext();
-    const result = await getApiKey(ctx);
+    const result = await getApiKey(ctx, 'mistral');
 
     assert.strictEqual(result, 'settings-key');
     sinon.assert.notCalled(ctx.secrets.get as sinon.SinonStub);
@@ -72,7 +72,7 @@ describe('getApiKey', () => {
     } as unknown as vscode.WorkspaceConfiguration);
 
     const ctx = makeFakeContext('secret-key');
-    const result = await getApiKey(ctx);
+    const result = await getApiKey(ctx, 'mistral');
 
     assert.strictEqual(result, 'secret-key');
     sinon.assert.calledOnce(ctx.secrets.get as sinon.SinonStub);
@@ -88,7 +88,7 @@ describe('getApiKey', () => {
     } as unknown as vscode.WorkspaceConfiguration);
 
     const ctx = makeFakeContext(undefined);
-    const result = await getApiKey(ctx);
+    const result = await getApiKey(ctx, 'mistral');
 
     assert.strictEqual(result, undefined);
     getConfigStub.restore();
@@ -103,7 +103,7 @@ describe('getApiKey', () => {
     } as unknown as vscode.WorkspaceConfiguration);
 
     const ctx = makeFakeContext();
-    const result = await getApiKey(ctx);
+    const result = await getApiKey(ctx, 'mistral');
 
     assert.strictEqual(result, 'my-api-key');
     getConfigStub.restore();
@@ -118,7 +118,7 @@ describe('getApiKey', () => {
     } as unknown as vscode.WorkspaceConfiguration);
 
     const ctx = makeFakeContext('  secret-key  ');
-    const result = await getApiKey(ctx);
+    const result = await getApiKey(ctx, 'mistral');
 
     assert.strictEqual(result, 'secret-key');
     getConfigStub.restore();
