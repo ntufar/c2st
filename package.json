@@ -27,7 +27,7 @@
   ],
   "activationEvents": [
     "onCommand:c2st.convertSelection",
-    "onCommand:c2st.setApiKey",
+    "onCommand:c2st.configureProvider",
     "onCommand:c2st.showLogs",
     "onLanguage:c"
   ],
@@ -42,8 +42,8 @@
         "title": "C2ST: Convert C to ST"
       },
       {
-        "command": "c2st.setApiKey",
-        "title": "C2ST: Set Mistral API Key"
+        "command": "c2st.configureProvider",
+        "title": "C2ST: Configure AI Provider and API Key"
       },
       {
         "command": "c2st.showLogs",
@@ -61,24 +61,22 @@
     "configuration": {
       "title": "C2ST",
       "properties": {
-        "c2st.mistralApiKey": {
+        "c2st.aiProvider": {
           "type": "string",
-          "default": "",
-          "description": "Your Mistral API key. Get one at https://console.mistral.ai/",
-          "scope": "application"
-        },
-        "c2st.model": {
-          "type": "string",
-          "default": "mistral-large-latest",
+          "default": "mistral",
           "enum": [
-            "mistral-large-latest",
-            "open-mistral-7b"
+            "mistral",
+            "openai",
+            "anthropic",
+            "google"
           ],
           "enumDescriptions": [
-            "Mistral Large - best quality, higher cost",
-            "Mistral 7B - faster, lower cost"
+            "Mistral AI",
+            "OpenAI",
+            "Anthropic",
+            "Google AI (Gemini)"
           ],
-          "description": "Mistral model to use for conversion",
+          "description": "Select the AI provider to use for conversion",
           "scope": "application"
         }
       }
