@@ -100,7 +100,7 @@ let outputChannel: vscode.OutputChannel | undefined;
 // Helper function to safely log to output channel (handles cases where tests call functions directly)
 function log(message: string): void {
   if (outputChannel) {
-    log(message);
+    outputChannel.appendLine(message);
   }
 }
 

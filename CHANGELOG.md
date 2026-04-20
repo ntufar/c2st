@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-04-20
+
+### Fixed
+- Fixed extension activation crashing due to recursive logging.
+
+## [0.0.10] - 2026-04-20
+
+### Added
+- Multi-provider AI support with four AI providers:
+  - Mistral AI (existing, now default option)
+  - OpenAI (GPT-4, GPT-3.5)
+  - Anthropic (Claude)
+  - Google AI (Gemini)
+- New "C2ST: Configure AI Provider and API Key" command for interactive setup
+  - Provider selection via quick pick menu
+  - Provider-specific API key configuration
+  - Secure storage of API keys per provider in VS Code secrets
+- `c2st.aiProvider` configuration setting with dropdown selection
+- `callAI()` router function to dynamically dispatch to the correct provider's API
+
+### Changed
+- Refactored API communication architecture:
+  - `callMistral()` now complemented by `callOpenAI()`, `callAnthropic()`, `callGoogle()`
+  - Unified error handling with `handleApiError()` function
+  - Provider-aware API key retrieval in `getApiKey(provider)`
+- `runConversion()` dynamically selects AI provider based on user configuration
+- Updated test suite to pass provider argument to `getApiKey()`
+
+### Fixed
+- Test compatibility with new provider-based API key retrieval
+
 ## [0.0.9] - 2026-04-18
 
 ### Added
@@ -140,7 +171,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release workflow for tagged versions
 - Artifact storage (14-day retention)
 
-[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/ntufar/c2st/compare/v0.0.10...HEAD
+[0.0.10]: https://github.com/ntufar/c2st/compare/v0.0.9...v0.0.10
+[0.0.9]: https://github.com/ntufar/c2st/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/ntufar/c2st/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/ntufar/c2st/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/ntufar/c2st/compare/v0.0.5...v0.0.6
