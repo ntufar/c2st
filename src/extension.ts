@@ -402,7 +402,7 @@ export async function callGoogle(apiKey: string, cCode: string, customModel?: st
   log(`[DEBUG] Model: ${model}`);
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         systemInstruction: {
           parts: [{ text: SYSTEM_PROMPT }]
@@ -417,6 +417,7 @@ export async function callGoogle(apiKey: string, cCode: string, customModel?: st
       {
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
         },
         timeout: 60_000,
       }
