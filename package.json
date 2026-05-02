@@ -78,6 +78,12 @@
           ],
           "description": "Select the AI provider to use for conversion",
           "scope": "application"
+        },
+        "c2st.model": {
+          "type": "string",
+          "default": "",
+          "description": "Override the default model for the selected AI provider (e.g., 'gpt-4o', 'claude-3-5-sonnet-20241022', 'mistral-large-latest', 'gemini-1.5-pro'). Leave empty to use provider defaults.",
+          "scope": "application"
         }
       }
     }
